@@ -1,0 +1,697 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HOTEL 221 — API Hôtelière",
+    "version": "1.0.0",
+    "description": "API REST pour la gestion des chambres, clients, réservations et services de l'hôtel HOTEL 221."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Serveur de développement"
+    }
+  ],
+  "tags": [
+    { "name": "Chambres", "description": "Gestion des chambres de l'hôtel" },
+    { "name": "Clients", "description": "Gestion des clients" },
+    { "name": "Réservations", "description": "Gestion des réservations" },
+    { "name": "Services", "description": "Gestion des services supplémentaires" }
+  ],
+  "paths": {
+    "/api/chambres": {
+      "get": {
+        "tags": ["Chambres"],
+        "summary": "Lister toutes les chambres",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["SIMPLE", "DOUBLE", "SUITE"] },
+            "description": "Filtrer par type de chambre"
+          },
+          {
+            "name": "statut",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["LIBRE", "OCCUPEE", "MAINTENANCE"] },
+            "description": "Filtrer par statut"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des chambres",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Chambre" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Chambres"],
+        "summary": "Créer une chambre",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChambreInput" },
+              "example": {
+                "numero": "101",
+                "type": "SIMPLE",
+                "prixParNuit": 45000,
+                "statut": "LIBRE"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chambre créée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Chambre" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/chambres/{id}": {
+      "get": {
+        "tags": ["Chambres"],
+        "summary": "Récupérer une chambre par ID",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": {
+            "description": "Chambre trouvée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Chambre" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Chambres"],
+        "summary": "Modifier une chambre",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ChambreUpdateInput" },
+              "example": { "statut": "MAINTENANCE" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Chambre mise à jour" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["Chambres"],
+        "summary": "Supprimer une chambre",
+        "description": "Interdit si la chambre a des réservations CONFIRMEE.",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Chambre supprimée" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/clients": {
+      "get": {
+        "tags": ["Clients"],
+        "summary": "Lister tous les clients",
+        "parameters": [
+          {
+            "name": "recherche",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Recherche par nom, prénom ou email"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des clients",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Client" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Clients"],
+        "summary": "Créer un client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ClientInput" },
+              "example": {
+                "prenom": "Mamadou",
+                "nom": "Diallo",
+                "email": "mamadou.diallo@email.com",
+                "telephone": "+221771234567",
+                "pieceIdentite": "SN-2024-001"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Client créé avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Client" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/clients/{id}": {
+      "get": {
+        "tags": ["Clients"],
+        "summary": "Récupérer un client par ID",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": {
+            "description": "Client trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Client" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Clients"],
+        "summary": "Modifier un client",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ClientUpdateInput" },
+              "example": { "telephone": "+221789999999" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Client mis à jour" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      },
+      "delete": {
+        "tags": ["Clients"],
+        "summary": "Supprimer un client",
+        "description": "Interdit si le client a des réservations.",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Client supprimé" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/reservations": {
+      "get": {
+        "tags": ["Réservations"],
+        "summary": "Lister toutes les réservations",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["CONFIRMEE", "ANNULEE", "TERMINEE"] },
+            "description": "Filtrer par statut"
+          },
+          {
+            "name": "clientId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "Filtrer par client"
+          },
+          {
+            "name": "chambreId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "Filtrer par chambre"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des réservations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Reservation" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Réservations"],
+        "summary": "Créer une réservation",
+        "description": "Vérifie l'existence du client et de la chambre, valide les dates, détecte les chevauchements et calcule le montant automatiquement.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReservationInput" },
+              "example": {
+                "clientId": 1,
+                "chambreId": 1,
+                "dateArrivee": "2026-05-01",
+                "dateDepart": "2026-05-05"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Réservation créée avec statut CONFIRMEE et montant calculé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Reservation" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/reservations/{id}": {
+      "get": {
+        "tags": ["Réservations"],
+        "summary": "Récupérer une réservation par ID",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": {
+            "description": "Réservation trouvée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Reservation" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Réservations"],
+        "summary": "Modifier le statut d'une réservation",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ReservationUpdateInput" },
+              "example": { "statut": "ANNULEE" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Réservation mise à jour" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Réservations"],
+        "summary": "Supprimer une réservation",
+        "description": "Interdit si la réservation a des services liés.",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Réservation supprimée" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "409": { "$ref": "#/components/responses/Conflict" }
+        }
+      }
+    },
+    "/api/services": {
+      "get": {
+        "tags": ["Services"],
+        "summary": "Lister tous les services",
+        "parameters": [
+          {
+            "name": "reservationId",
+            "in": "query",
+            "schema": { "type": "integer" },
+            "description": "Filtrer par réservation"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des services",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Service" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Services"],
+        "summary": "Ajouter un service à une réservation",
+        "description": "La réservation doit exister et être CONFIRMEE.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ServiceInput" },
+              "example": {
+                "reservationId": 1,
+                "libelle": "Petit-déjeuner",
+                "prix": 5000,
+                "date": "2026-05-02"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service ajouté avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Service" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/services/{id}": {
+      "get": {
+        "tags": ["Services"],
+        "summary": "Récupérer un service par ID",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": {
+            "description": "Service trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/SuccessResponse" },
+                    { "properties": { "data": { "$ref": "#/components/schemas/Service" } } }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Services"],
+        "summary": "Supprimer un service",
+        "parameters": [{ "$ref": "#/components/parameters/IdParam" }],
+        "responses": {
+          "200": { "description": "Service supprimé" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "IdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "description": "Identifiant de la ressource"
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "succes": { "type": "boolean", "example": false },
+          "message": { "type": "string" },
+          "details": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "Chambre": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "numero": { "type": "string", "example": "101" },
+          "type": { "type": "string", "enum": ["SIMPLE", "DOUBLE", "SUITE"], "example": "SIMPLE" },
+          "prixParNuit": { "type": "number", "example": 45000 },
+          "statut": { "type": "string", "enum": ["LIBRE", "OCCUPEE", "MAINTENANCE"], "example": "LIBRE" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ChambreInput": {
+        "type": "object",
+        "required": ["numero", "type", "prixParNuit"],
+        "properties": {
+          "numero": { "type": "string", "example": "101" },
+          "type": { "type": "string", "enum": ["SIMPLE", "DOUBLE", "SUITE"] },
+          "prixParNuit": { "type": "number", "minimum": 0.01, "example": 45000 },
+          "statut": { "type": "string", "enum": ["LIBRE", "OCCUPEE", "MAINTENANCE"], "default": "LIBRE" }
+        }
+      },
+      "ChambreUpdateInput": {
+        "type": "object",
+        "properties": {
+          "numero": { "type": "string" },
+          "type": { "type": "string", "enum": ["SIMPLE", "DOUBLE", "SUITE"] },
+          "prixParNuit": { "type": "number", "minimum": 0.01 },
+          "statut": { "type": "string", "enum": ["LIBRE", "OCCUPEE", "MAINTENANCE"] }
+        }
+      },
+      "Client": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "prenom": { "type": "string", "example": "Mamadou" },
+          "nom": { "type": "string", "example": "Diallo" },
+          "email": { "type": "string", "example": "mamadou.diallo@email.com" },
+          "telephone": { "type": "string", "example": "+221771234567" },
+          "pieceIdentite": { "type": "string", "example": "SN-2024-001" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ClientInput": {
+        "type": "object",
+        "required": ["prenom", "nom", "email", "pieceIdentite"],
+        "properties": {
+          "prenom": { "type": "string", "minLength": 2, "example": "Mamadou" },
+          "nom": { "type": "string", "minLength": 2, "example": "Diallo" },
+          "email": { "type": "string", "format": "email", "example": "mamadou.diallo@email.com" },
+          "telephone": { "type": "string", "example": "+221771234567" },
+          "pieceIdentite": { "type": "string", "example": "SN-2024-001" }
+        }
+      },
+      "ClientUpdateInput": {
+        "type": "object",
+        "properties": {
+          "prenom": { "type": "string", "minLength": 2 },
+          "nom": { "type": "string", "minLength": 2 },
+          "email": { "type": "string", "format": "email" },
+          "telephone": { "type": "string" },
+          "pieceIdentite": { "type": "string" }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "clientId": { "type": "integer", "example": 1 },
+          "chambreId": { "type": "integer", "example": 1 },
+          "dateArrivee": { "type": "string", "format": "date-time" },
+          "dateDepart": { "type": "string", "format": "date-time" },
+          "montant": { "type": "number", "example": 180000 },
+          "statut": { "type": "string", "enum": ["CONFIRMEE", "ANNULEE", "TERMINEE"], "example": "CONFIRMEE" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ReservationInput": {
+        "type": "object",
+        "required": ["clientId", "chambreId", "dateArrivee", "dateDepart"],
+        "properties": {
+          "clientId": { "type": "integer", "example": 1 },
+          "chambreId": { "type": "integer", "example": 1 },
+          "dateArrivee": { "type": "string", "format": "date", "example": "2026-05-01" },
+          "dateDepart": { "type": "string", "format": "date", "example": "2026-05-05" }
+        }
+      },
+      "ReservationUpdateInput": {
+        "type": "object",
+        "required": ["statut"],
+        "properties": {
+          "statut": { "type": "string", "enum": ["CONFIRMEE", "ANNULEE", "TERMINEE"] }
+        }
+      },
+      "Service": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "libelle": { "type": "string", "example": "Petit-déjeuner" },
+          "prix": { "type": "number", "example": 5000 },
+          "date": { "type": "string", "format": "date-time" },
+          "reservationId": { "type": "integer", "example": 1 },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ServiceInput": {
+        "type": "object",
+        "required": ["reservationId", "libelle", "prix", "date"],
+        "properties": {
+          "reservationId": { "type": "integer", "example": 1 },
+          "libelle": { "type": "string", "example": "Petit-déjeuner" },
+          "prix": { "type": "number", "minimum": 0, "example": 5000 },
+          "date": { "type": "string", "format": "date", "example": "2026-05-02" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Ressource introuvable",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Conflit (doublon ou contrainte métier)",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+          }
+        }
+      }
+    }
+  }
+}

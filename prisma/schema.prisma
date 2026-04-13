@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TypeChambre {
+  SIMPLE
+  DOUBLE
+  SUITE
+}
+
+enum StatutChambre {
+  LIBRE
+  OCCUPEE
+  MAINTENANCE
+}
+
+enum StatutReservation {
+  CONFIRMEE
+  ANNULEE
+  TERMINEE
+}
+
+model Chambre {
+  id          Int           @id @default(autoincrement())
+  numero      String        @unique
+  type        TypeChambre
+  prixParNuit Float
+  statut      StatutChambre @default(LIBRE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  reservations Reservation[]
+
+  @@map("chambres")
+}
+
+model Client {
+  id              Int      @id @default(autoincrement())
+  prenom          String
+  nom             String
+  email           String   @unique
+  telephone       String?  @unique
+  pieceIdentite   String   @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reservations Reservation[]
+
+  @@map("clients")
+}
+
+model Reservation {
+  id          Int               @id @default(autoincrement())
+  clientId    Int
+  chambreId   Int
+  dateArrivee DateTime
+  dateDepart  DateTime
+  montant     Float
+  statut      StatutReservation @default(CONFIRMEE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  client   Client   @relation(fields: [clientId], references: [id])
+  chambre  Chambre  @relation(fields: [chambreId], references: [id])
+  services Service[]
+
+  @@map("reservations")
+}
+
+model Service {
+  id            Int      @id @default(autoincrement())
+  libelle       String
+  prix          Float
+  date          DateTime
+  reservationId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+
+  @@map("services")
+}
